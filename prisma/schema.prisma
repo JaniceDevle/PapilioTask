@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum TaskStatus {
+  Pending
+  Ongoing
+  Finished
+  Overdue
+}
+
+enum TaskPriority {
+  Low
+  Medium
+  High
+}
+
+model User {
+  id           Int    @id @default(autoincrement())
+  username     String @unique
+  email        String @unique
+  passwordHash String
+
+  // 与 Task 的关系：被分配的任务
+  tasks Task[]
+
+  // 与 Notification 的关系
+  notifications Notification[]
+
+  // 与 Event 的关系：被指派的事件
+  assignedEvents Event[] @relation("UserAssignedEvents")
+
+  // 与 Milestone 的关系：最后更新者
+  updatedMilestones Milestone[] @relation("UserUpdatedMilestones")
+}
+
+model Task {
+  id          Int          @id @default(autoincrement())
+  title       String
+  description String?
+  status      TaskStatus   @default(Pending)
+  priority    TaskPriority @default(Medium)
+  assignee    User?        @relation(fields: [assigneeId], references: [id])
+  assigneeId  Int?
+  dueDate     DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Event {
+  id          Int      @id @default(autoincrement())
+  eventNumber String   @unique
+  name        String
+  startDate   DateTime
+  endDate     DateTime
+  labels      String?
+  status      String?
+
+  assignee   User? @relation("UserAssignedEvents", fields: [assigneeId], references: [id])
+  assigneeId Int?
+}
+
+model Milestone {
+  id                Int      @id @default(autoincrement())
+  title             String
+  description       String?
+  completionPercent Float    @default(0)
+  updatedAt         DateTime @updatedAt
+
+  lastUpdatedBy   User? @relation("UserUpdatedMilestones", fields: [lastUpdatedById], references: [id])
+  lastUpdatedById Int?
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
