@@ -1,118 +1,45 @@
-import { LockOutlined } from '@ant-design/icons';
-import { Button, Card, Divider, Input, message, Space, Typography, Modal } from 'antd';
-import React, { useState } from 'react';
+import { Button, Divider, Flex, message, Typography } from 'antd';
+import React from 'react';
+import { ProfileSection } from './components/ProfileSection';
+import { SecuritySection } from './components/SecuritySection';
+import { useAccountSecurity } from './hooks/useAccountSecurity';
+import { useProfileSettings } from './hooks/useProfileSettings';
 
-const { Title, Paragraph, Link, Text } = Typography;
+const { Title } = Typography;
 
 const SettingsPage: React.FC = () => {
-  const [successor, setSuccessor] = useState('');
-  const [designatedSuccessor, setDesignatedSuccessor] = useState<string | null>(null);
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [oldPassword, setOldPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  // 使用自定义钩子管理个人资料相关状态和方法
+  const profileSettings = useProfileSettings();
 
-  const handleChangePassword = () => {
-    if (!oldPassword || !newPassword || !confirmPassword) {
-      message.warning('Please fill in all fields');
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      message.error('New passwords do not match');
-      return;
-    }
-
-    // 模拟请求
-    message.success('Password changed successfully');
-    setIsModalVisible(false);
-    setOldPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
-  };
-
-  const handleAddSuccessor = () => {
-    if (!successor) {
-      message.warning('Please enter a valid name or email');
-      return;
-    }
-    setDesignatedSuccessor(successor);
-    message.success('Successor added');
-    setSuccessor('');
-  };
-
-  const handleDeleteAccount = () => {
-    message.error('Account deleted');
-    // Perform deletion logic here
-  };
-
-  const [email, setEmail] = useState('');
-  const [backupEmail, setBackupEmail] = useState('Allow all verified emails');
-  const [keepPrivate, setKeepPrivate] = useState(true);
-  const [blockPushes, setBlockPushes] = useState(false);
-
-  const handleAddEmail = () => {
-    if (!email) {
-      message.warning('Please enter an email address');
-      return;
-    }
-    message.success(`Email ${email} added successfully`);
-    setEmail('');
-  };
+  // 使用自定义钩子管理账户安全相关状态和方法
+  const securitySettings = useAccountSecurity();
 
   return (
     <div style={{ padding: 24 }}>
-      <Card style={{ marginBottom: 24 }}>
-        <Title level={4}>Password</Title>
-        <Paragraph>
-          Strengthen your account by ensuring your password is strong.{' '}
-          <Link href="https://github.com/settings/security#password" target="_blank">
-            Learn more about creating a strong password
-          </Link>
-        </Paragraph>
-        <Button type="primary" icon={<LockOutlined />} onClick={() => setIsModalVisible(true)}>
-          Change password
-        </Button>
-      </Card>
+      <Title level={3}>Account Settings</Title>
 
-      <Card>
-        <Title level={4} style={{ color: 'red' }}>
-          Delete account
-        </Title>
-        <Paragraph>
-          Once you delete your account, there is no going back. Please be certain.
-        </Paragraph>
-        <Button danger onClick={handleDeleteAccount}>
-          Delete your account
-        </Button>
-      </Card>
+      {/* 公开资料部分 */}
+      <Title level={4} style={{ marginTop: 24 }}>Public Profile</Title>
+      <ProfileSection settings={profileSettings} />
 
-      <Modal
-        title="Change Password"
-        open={isModalVisible}
-        onCancel={() => setIsModalVisible(false)}
-        onOk={handleChangePassword}
-        okText="Update Password"
-        cancelText="Cancel"
-      >
-        <Space direction="vertical" style={{ width: '100%' }}>
-          <Input.Password
-            placeholder="Current Password"
-            value={oldPassword}
-            onChange={(e) => setOldPassword(e.target.value)}
-          />
-          <Input.Password
-            placeholder="New Password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-          />
-          <Input.Password
-            placeholder="Confirm New Password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-          />
-        </Space>
-      </Modal>
+      <Divider />
+
+      {/* 安全部分 */}
+      <Title level={4}>Security</Title>
+      <SecuritySection settings={securitySettings} />
+
+      {/* 保存所有更改按钮 */}
+      <Flex justify="flex-end" style={{ marginTop: 24 }}>
+        <Button
+          type="primary"
+          onClick={() => {
+            profileSettings.handleSave();
+            message.success('All changes saved successfully');
+          }}
+        >
+          Save All Changes
+        </Button>
+      </Flex>
     </div>
   );
 };
