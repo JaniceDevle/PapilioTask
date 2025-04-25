@@ -6,8 +6,8 @@ export const fetchLabelList = () => {
   });
 };
 
-export const fetchIssueList = () => {
-  return request('/api/issues/list', {
+export const fetchEventList = () => {
+  return request('/api/events/list', {
     method: 'GET',
-  });
+});
 };

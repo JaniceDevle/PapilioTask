@@ -3,29 +3,27 @@ import React, { useEffect, useMemo, useState } from 'react';
 import IssuesList from './components/IssuesList';
 import LabelsList from './components/LabelsList';
 import PageHeader from './components/PageHeader';
-import { fetchIssueList, fetchLabelList } from './service';
-import { Issue, Label } from './types';
+import { fetchEventList, fetchLabelList } from './service';
+import { Label } from './types';
 
 // 主页面组件
 const LabelsPage: React.FC = () => {
-  // 状态管理
   const [searchKeyword, setSearchKeyword] = useState('');
   const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
   const [allLabels, setAllLabels] = useState<Label[]>([]);
-  const [allIssues, setAllIssues] = useState<Issue[]>([]);
+  const [allEvents, setAllEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // 数据加载
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [labels, issues] = await Promise.all([
+        const [labels, events] = await Promise.all([
           fetchLabelList(),
-          fetchIssueList()
+          fetchEventList()
         ]);
         setAllLabels(labels);
-        setAllIssues(issues);
+        setAllEvents(events);
       } catch (error) {
         console.error('Failed to fetch data:', error);
       } finally {
@@ -45,8 +43,8 @@ const LabelsPage: React.FC = () => {
 
   const filteredIssues = useMemo(() => {
     if (!selectedLabel) return [];
-    return allIssues.filter((i) => i.labels.includes(selectedLabel));
-  }, [selectedLabel, allIssues]);
+    return allEvents.filter((i) => i.labels.includes(selectedLabel));
+  }, [selectedLabel, allEvents]);
 
   return (
     <div style={{ padding: 24 }}>

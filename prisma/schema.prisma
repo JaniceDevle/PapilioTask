@@ -35,8 +35,9 @@ model User {
   // 与 Event 的关系：被指派的事件
   assignedEvents Event[] @relation("UserAssignedEvents")
 
-  // 与 Milestone 的关系：最后更新者
-  updatedMilestones Milestone[] @relation("UserUpdatedMilestones")
+  // 与评论的关系
+  comments  Comment[]
+  Milestone Milestone[]
 }
 
 model Task {
@@ -56,24 +57,40 @@ model Event {
   id          Int      @id @default(autoincrement())
   eventNumber String   @unique
   name        String
+  description String?
   startDate   DateTime
   endDate     DateTime
-  labels      String?
-  status      String?
+  labels      String? // 存储为逗号分隔的字符串
+  status      String   @default("Pending") // 使用字符串表示状态
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   assignee   User? @relation("UserAssignedEvents", fields: [assigneeId], references: [id])
   assigneeId Int?
+
+  // 与评论的关系
+  comments Comment[]
+
+  milestoneId Int? // 添加里程碑ID字段
+  milestone   Milestone? @relation("MilestoneEvents", fields: [milestoneId], references: [id])
 }
 
 model Milestone {
-  id                Int      @id @default(autoincrement())
-  title             String
-  description       String?
-  completionPercent Float    @default(0)
-  updatedAt         DateTime @updatedAt
-
-  lastUpdatedBy   User? @relation("UserUpdatedMilestones", fields: [lastUpdatedById], references: [id])
+  id              Int       @id @default(autoincrement())
+  title           String    @unique
+  description     String?
+  status          String    @default("open") // open or closed
+  percent         Float     @default(0)
+  openCount       Int       @default(0)
+  closedCount     Int       @default(0)
+  dueDate         DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
   lastUpdatedById Int?
+  userId          Int?
+  User            User?     @relation(fields: [userId], references: [id])
+
+  events Event[] @relation("MilestoneEvents") // 修改为正确的关系名称
 }
 
 model Notification {
@@ -83,4 +100,15 @@ model Notification {
   message   String
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  eventId   Int
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
