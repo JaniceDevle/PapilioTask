@@ -1,13 +1,25 @@
+import { PrismaClient } from '@prisma/client';
 import { Request, Response } from 'express';
 
+const prisma = new PrismaClient();
+
 // 总览统计
-const getDashboardOverview = (_: Request, res: Response) => {
-  res.json({
-    pending: 3,
-    inProgress: 1,
-    completed: 2,
-    overdue: 1,
-  });
+const getDashboardOverview = async (_: Request, res: Response) => {
+  try {
+    const events = await prisma.event.findMany();
+
+    const overview = {
+      pending: events.filter(e => e.status === 'Pending').length,
+      inProgress: events.filter(e => e.status === 'In Progress').length,
+      completed: events.filter(e => e.status === 'Completed').length,
+      overdue: events.filter(e => e.status === 'Overdue').length,
+    };
+
+    res.json(overview);
+  } catch (error) {
+    console.error('Error getting dashboard overview:', error);
+    res.status(500).json({ error: 'Failed to get dashboard overview' });
+  }
 };
 
 // 优先级分布（与任务对应）
