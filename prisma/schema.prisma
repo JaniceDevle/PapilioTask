@@ -53,13 +53,22 @@ model Task {
   updatedAt   DateTime     @updatedAt
 }
 
+model Project {
+  id          Int       @id @default(autoincrement())
+  name        String
+  events      Event[]
+}
+
 model Event {
   id          Int      @id @default(autoincrement())
   eventNumber String   @unique
   name        String
   description String?
-  startDate   DateTime
-  endDate     DateTime
+  startDate   DateTime @default(now())  // 添加这行
+  endDate     DateTime @default(now())  // 添加这行
+  columnType  String   @default("Team User Stories")
+  project     Project? @relation(fields: [projectId], references: [id])
+  projectId   Int?
   labels      String? // 存储为逗号分隔的字符串
   status      String   @default("Pending") // 使用字符串表示状态
   createdAt   DateTime @default(now())

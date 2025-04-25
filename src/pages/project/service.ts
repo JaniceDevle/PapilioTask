@@ -5,3 +5,13 @@ export const fetchBoardData = () => {
     method: 'GET',
   });
 };
+
+export const addEventToBoard = (eventId: number, columnType: string) => {
+  return request('/api/board/addEvent', {
+    method: 'POST',
+    data: {
+      eventId,
+      columnType,
+    },
+  });
+};

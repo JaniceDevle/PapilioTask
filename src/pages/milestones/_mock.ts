@@ -35,16 +35,32 @@ export default {
 
   'POST /api/milestones': async (req: Request, res: Response) => {
     try {
+      console.log('Received milestone data:', req.body);
+
+      // 确保正确获取标题
+      const title = req.body.title || req.body.name;
+
+      if (!title) {
+        return res.status(400).json({
+          success: false,
+          errorMessage: '里程碑标题是必填项',
+          details: req.body
+        });
+      }
+
       const milestone = await prisma.milestone.create({
         data: {
-          title: req.body.title,
-          description: req.body.description,
-          status: req.body.status || 'open',
-          percent: req.body.percent || 0,
-          openCount: req.body.openCount || 0,
-          closedCount: req.body.closedCount || 0,
-          eventId: req.body.eventId,
-          dueDate: req.body.dueDate ? new Date(req.body.dueDate) : null
+          title,                    // 使用处理后的标题
+          description: req.body.description || null,
+          status: 'open',
+          events: {
+            connect: Array.isArray(req.body.events)
+              ? req.body.events.map((id: number) => ({ id }))
+              : []
+          },
+          dueDate: req.body.timeframe && Array.isArray(req.body.timeframe)
+            ? new Date(req.body.timeframe[1])
+            : null
         },
         include: {
           events: true
@@ -56,10 +72,11 @@ export default {
         success: true
       });
     } catch (error) {
-      console.error('创建里程碑失败:', error);
+      console.error('创建里程碑失败:', error, '请求数据:', req.body);
       res.status(500).json({
         success: false,
-        errorMessage: '创建里程碑失败'
+        errorMessage: '创建里程碑失败',
+        details: error.message
       });
     }
   },

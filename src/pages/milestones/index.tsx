@@ -94,19 +94,22 @@ const MilestonesPage: React.FC = () => {
     try {
       const values = await form.validateFields();
       await createMilestone({
-        title: values.name,
+        title: values.title, // 修改这里，使用title而不是name
         description: values.description,
-        eventId: values.eventId,
+        events: values.events,  // 修改为events数组
+        timeframe: values.timeframe,
         status: 'open',
         percent: 0,
         openCount: 0,
         closedCount: 0
       });
+
       message.success('创建里程碑成功');
       setIsModalVisible(false);
       form.resetFields();
-      fetchMilestones(); // 刷新列表
+      fetchMilestones();
     } catch (error) {
+      console.error('创建里程碑失败:', error);
       message.error('创建里程碑失败');
     }
   };

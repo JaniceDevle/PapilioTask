@@ -1,11 +1,11 @@
 import { PlusOutlined } from '@ant-design/icons';
 import { Button, Card, Col, Input, message, Row, Space } from 'antd';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { SearchEventModal } from './components/SearchEventModal';
 import BoardColumnComponent from './components/BoardColumn';
-import CreateEventModal from './components/CreateEventModal';
-import { BoardColumn, columnTypes, Task } from './types';
+import { BoardColumn, columnTypes } from './types';
+import { fetchBoardData, addEventToBoard } from './service';
 
-// Main page component
 const ProjectBoardPage: React.FC = () => {
   const [searchKeyword, setSearchKeyword] = useState('');
   const [searchActive, setSearchActive] = useState(false);
@@ -23,67 +23,18 @@ const ProjectBoardPage: React.FC = () => {
 
   // Modal state
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [newEventName, setNewEventName] = useState('');
-  const [selectedColumn, setSelectedColumn] = useState('');
-  const [selectedTag, setSelectedTag] = useState('Meeting');
 
-  // Generate unique event number
-  const generateUniqueEventNumber = (): string => {
-    const allNumbers = boardData
-      .flatMap((col) => col.tasks.map((task) => task.number))
-      .filter(Boolean);
-
-    const maxNumber = allNumbers.reduce((max, num) => {
-      const match = num.match(/^PRJ-(\d+)$/);
-      if (match) {
-        const numPart = parseInt(match[1], 10);
-        return Math.max(max, numPart);
-      }
-      return max;
-    }, 0);
-
-    return `PRJ-${String(maxNumber + 1).padStart(3, '0')}`;
-  };
-
-  // Add new event
-  const handleAddEvent = () => {
-    if (!newEventName || !selectedColumn) {
-      message.error('Please fill in all required fields');
-      return;
+  const handleSelectEvent = async (eventId: number, columnType: string) => {
+    try {
+      await addEventToBoard(eventId, columnType);
+      const data = await fetchBoardData();
+      setBoardData(data);
+      setFilteredBoard(data);
+      setIsModalVisible(false);
+      message.success('事件已添加到看板！');
+    } catch (error) {
+      message.error('添加事件失败');
     }
-
-    const newTask: Task = {
-      id: Date.now(),
-      number: generateUniqueEventNumber(),
-      name: newEventName,
-      tags: [selectedTag],
-    };
-
-    const updatedBoard = boardData.map((col) => {
-      if (col.columnTitle === selectedColumn) {
-        return {
-          ...col,
-          count: col.count + 1,
-          tasks: [...col.tasks, newTask],
-        };
-      }
-      return col;
-    });
-
-    setBoardData(updatedBoard);
-    setFilteredBoard(updatedBoard);
-    resetModalForm();
-    message.success('Event added!');
-  };
-
-  // Reset form
-  const resetModalForm = () => {
-    setIsModalVisible(false);
-    setNewEventName('');
-    setSelectedColumn('');
-    setSelectedTag('Meeting');
-    setSearchKeyword('');
-    setSearchActive(false);
   };
 
   // Search functionality
@@ -116,6 +67,21 @@ const ProjectBoardPage: React.FC = () => {
     setSearchActive(false);
   };
 
+  useEffect(() => {
+    const loadBoardData = async () => {
+      try {
+        const data = await fetchBoardData();
+        setBoardData(data);
+        setFilteredBoard(data);
+      } catch (error) {
+        message.error('加载看板数据失败');
+        console.error(error);
+      }
+    };
+
+    loadBoardData();
+  }, []);
+
   return (
     <div style={{ padding: 24 }}>
       {/* Search and operation area */}
@@ -140,7 +106,7 @@ const ProjectBoardPage: React.FC = () => {
                 icon={<PlusOutlined />}
                 onClick={() => setIsModalVisible(true)}
               >
-                Add Event
+                添加事件
               </Button>
             </Space>
           </Space>
@@ -157,16 +123,10 @@ const ProjectBoardPage: React.FC = () => {
       </Row>
 
       {/* Create event modal */}
-      <CreateEventModal
+      <SearchEventModal
         visible={isModalVisible}
         onCancel={() => setIsModalVisible(false)}
-        onSubmit={handleAddEvent}
-        eventName={newEventName}
-        setEventName={setNewEventName}
-        selectedColumn={selectedColumn}
-        setSelectedColumn={setSelectedColumn}
-        selectedTag={selectedTag}
-        setSelectedTag={setSelectedTag}
+        onSelect={handleSelectEvent}
         columnTypes={columnTypes}
       />
     </div>

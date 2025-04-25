@@ -6,26 +6,32 @@ const prisma = new PrismaClient();
 
 // 获取事件列表（Event Schedule）
 const getEventList = async (_: Request, res: Response) => {
-  const events = await prisma.event.findMany({
-    include: {
-      assignee: true,
-    },
-    orderBy: {
-      startDate: 'asc',
-    },
-  });
+  try {
+    const events = await prisma.event.findMany({
+      include: {
+        assignee: true,
+      },
+    });
 
-  const result = events.map((e) => ({
-    key: e.id,
-    eventNumber: e.eventNumber,
-    eventName: e.name,
-    assignees: e.assignee?.username || '',
-    timeframe: `${dayjs(e.startDate).format('YYYY/MM/DD')} - ${dayjs(e.endDate).format('YYYY/MM/DD')}`,
-    labels: e.labels?.split(',') || [],
-    status: [e.status || 'Pending'],
-  }));
+    if (!events || events.length === 0) {
+      return res.json([]);  // 如果没有数据，返回空数组
+    }
 
-  res.json(result);
+    const result = events.map((e) => ({
+      key: e.id,
+      eventNumber: e.eventNumber,
+      eventName: e.name,
+      assignees: e.assignee?.username || '',
+      timeframe: `${dayjs(e.startDate).format('YYYY/MM/DD')} - ${dayjs(e.endDate).format('YYYY/MM/DD')}`,
+      labels: e.labels?.split(',') || [],
+      status: [e.status || 'Pending'],
+    }));
+
+    res.json(result);
+  } catch (error) {
+    console.error('Error fetching event list:', error);
+    res.status(500).json({ error: 'Failed to fetch event list' });
+  }
 };
 
 // 获取今日的日程安排
@@ -227,6 +233,7 @@ const createEvent = async (req: Request, res: Response) => {
         labels: labels && Array.isArray(labels) && labels.length > 0 ? labels.join(',') : null,
         status: status && Array.isArray(status) && status.length > 0 ? status[0] : 'Pending',
         assigneeId,
+        // 删除 projectId，因为它现在是可选的
       },
       include: {
         assignee: true,
